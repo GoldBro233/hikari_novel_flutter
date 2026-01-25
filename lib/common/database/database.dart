@@ -10,17 +10,11 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 8; //FIXME 正式版需要改为1
+  int get schemaVersion => 1;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
-    onUpgrade: (m, from, to) async {
-      if (from == 7) {
-        await m.createTable(browsingHistoryEntity);
-        await m.deleteTable("visit_history_entity");
-        await m.deleteTable("chapter_cache_task_entity");
-      }
-    },
+    onUpgrade: (m, from, to) async {},
   );
 
   Future<void> insertAllBookshelf(Iterable<BookshelfEntityData> data) => batch((b) => b.insertAll(bookshelfEntity, data));

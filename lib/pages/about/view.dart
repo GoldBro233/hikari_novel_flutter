@@ -25,7 +25,7 @@ class AboutPage extends StatelessWidget {
           ),
           ListTile(
               title: Text("Github", style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
-              onTap: () => launchUrl(Uri.parse("")), //FIXME 填充对应的url
+              onTap: () => launchUrl(Uri.parse("https://github.com/15dd/hikari_novel_flutter")),
           ),
         ],
       ),
