@@ -42,9 +42,9 @@ class Request {
   static String? get _cookie => LocalStorageService.instance.getCookie();
 
   static Map<String, String> _getMewxWenku8PostForm(String request) => {
-    "appver": "1.25-chibi-chapter-144c9c5",
+    "appver": "1.24-pico-mochi",
     "timetoken": DateTime.now().millisecondsSinceEpoch.toString(),
-    "request": base64.encode(utf8.encode(request)),
+    "request": base64.encode(request.codeUnits),
   };
 
   ///获取通用数据（如其他网站的数据，即不用wenku8的cookie）

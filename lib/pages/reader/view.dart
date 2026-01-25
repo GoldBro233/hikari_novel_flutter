@@ -66,7 +66,7 @@ class ReaderPage extends StatelessWidget {
               child: Offstage(
                 offstage: controller.readerSettingsState.value.direction == ReaderDirection.upToDown,
                 child: IgnorePointer(
-                  ignoring: controller.pageState.value != PageState.success,
+                  ignoring: controller.pageState.value != PageState.success, //FIXME 似乎一直被误触
                   child: Row(
                     children: [
                       Expanded(
