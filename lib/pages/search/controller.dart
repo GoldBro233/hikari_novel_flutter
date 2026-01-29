@@ -90,7 +90,7 @@ class SearchController extends GetxController {
     Get.closeAllSnackbars();
 
     Get.snackbar(
-      '杂鱼点那么是准备快爬虫嘛',
+      '雑魚雑魚❤️点那么是准备快爬虫嘛',
       // 用短句 + 自动换行；如果未来文案变长，也会在空格/标点处自然断行
       '等5秒会自动搜索这不是Bug',
       snackPosition: SnackPosition.BOTTOM,
@@ -127,7 +127,7 @@ class SearchController extends GetxController {
 
       // 文字居中（与「保存图片」一致风格）
       titleText: Text(
-        '杂鱼点那么是准备快爬虫嘛',
+        '雑魚雑魚❤️点那么是准备快爬虫嘛',
         textAlign: TextAlign.center,
         style: TextStyle(
           color: textColor,
