@@ -71,50 +71,77 @@ class SearchController extends GetxController {
   }
 
   void _showCooldownTip() {
-    // 统一风格的“轻提示”，并根据当前主题（亮/暗）切换提示框的底色与文字色
-    final isDark = Get.theme.brightness == Brightness.dark;
+    // 复用「保存图片成功/失败」同款提示风格：浮动 Snackbar + 图标 + 两行文字
+    final theme = Get.theme;
+    final cs = theme.colorScheme;
+    final isDark = Get.isDarkMode ||
+        theme.brightness == Brightness.dark ||
+        cs.brightness == Brightness.dark;
 
-    // 日间(亮色)：白底黑字；夜间(暗色)：黑底白字
-    final bgColor = isDark ? Colors.black.withOpacity(0.78) : Colors.white.withOpacity(0.94);
+    // 亮色：白底黑字；暗色：深色底白字
+    final bgColor = isDark
+        ? const Color(0xFF1F1F1F).withOpacity(0.95)
+        : Colors.white.withOpacity(0.95);
     final textColor = isDark ? Colors.white : Colors.black87;
+    final shadowColor =
+        isDark ? Colors.black.withOpacity(0.45) : Colors.black.withOpacity(0.15);
 
     // 防止连点时堆叠很多提示
     Get.closeAllSnackbars();
 
-    Get.rawSnackbar(
-      snackStyle: SnackStyle.FLOATING,
-      backgroundColor: bgColor,
-      // 让提示框更宽：减少左右 margin，并把消息区域宽度拉到接近全宽
-      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-      borderRadius: 12,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
+    Get.snackbar(
+      '操作过快',
+      // 用短句 + 自动换行；如果未来文案变长，也会在空格/标点处自然断行
+      '请稍后再试',
       snackPosition: SnackPosition.BOTTOM,
-      duration: const Duration(seconds: 5),
-      animationDuration: const Duration(milliseconds: 180),
-      messageText: ConstrainedBox(
-        constraints: BoxConstraints(
-          // 稍微变窄：两侧留更多空白
-          minWidth: Get.width * 0.76,
-          maxWidth: Get.width * 0.82,
+      snackStyle: SnackStyle.FLOATING,
+
+      // 两侧留白更大 => 视觉更“窄”，更协调
+      margin: const EdgeInsets.symmetric(horizontal: 36, vertical: 12),
+
+      // 圆角稍小一点
+      borderRadius: 12,
+
+      backgroundColor: bgColor,
+      colorText: textColor,
+
+      // 图标从「✔」改为「×」
+      icon: Icon(
+        Icons.cancel_rounded,
+        color: cs.error,
+      ),
+
+      // 让高度接近原来的 2 倍：增加上下 padding
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 22),
+
+      duration: const Duration(seconds: 2),
+      isDismissible: true,
+      shouldIconPulse: false,
+      boxShadows: [
+        BoxShadow(
+          color: shadowColor,
+          blurRadius: 18,
+          offset: const Offset(0, 8),
         ),
-        child: SizedBox(
-          // 高度约为当前的 2 倍（更“厚”的提示框）
-          height: 72,
-          child: Center(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8),
-              child: Text(
-                "点那么快爬虫呢？这不是bug等5秒自动搜索",
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: textColor,
-                  fontSize: 13,
-                  height: 1.25,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
-          ),
+      ],
+
+      // 文字居中（与「保存图片」一致风格）
+      titleText: Text(
+        '操作过快',
+        textAlign: TextAlign.center,
+        style: TextStyle(
+          color: textColor,
+          fontSize: 14,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+      messageText: Text(
+        '请稍后再试',
+        textAlign: TextAlign.center,
+        style: TextStyle(
+          color: textColor,
+          fontSize: 13,
+          height: 1.35,
         ),
       ),
     );
