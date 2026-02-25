@@ -288,6 +288,7 @@ class AppTranslations extends Translations {
       "chapter_content_loading_tip": "当前章节还在加载中",
       "copy_all": "复制全部",
       "free_copy": "自由复制",
+      "record_position_exceeds_max_range_tip": "记录的历史阅读位置超出当前内容的最大范围，无法跳转到记录的位置"
     },
 
     "zh_TW": {
@@ -574,7 +575,8 @@ class AppTranslations extends Translations {
       "exit": "離開",
       "chapter_content_loading_tip": "目前章節仍在載入中",
       "copy_all": "複製全部",
-      "free_copy": "自由複製"
+      "free_copy": "自由複製",
+      "record_position_exceeds_max_range_tip": "記錄的歷史閱讀位置超出當前內容的最大範圍，無法跳轉到記錄的位置"
     }
   };
 }

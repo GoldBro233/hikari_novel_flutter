@@ -103,7 +103,7 @@ Widget _getCommonErrorInfoView(String msg) => SingleChildScrollView(
   child: Column(
     children: [
       Text("cloudflare_challenge_exception_tip".tr),
-      const WxDivider(pattern: WxDivider.dashed, child: Text("Raw Message")),
+      WxDivider(pattern: WxDivider.dashed, color: Theme.of(Get.context!).colorScheme.onSurface,child: Text("Raw Message")),
       const SizedBox(height: 6),
       Text(msg),
     ],

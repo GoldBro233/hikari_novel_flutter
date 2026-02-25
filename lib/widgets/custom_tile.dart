@@ -158,7 +158,7 @@ class NormalListDialog<T> extends StatelessWidget {
             children: List.generate(values.length, (index) {
               final item = values[index];
               return Padding(
-                padding: EdgeInsets.only(left: 18),
+                padding: EdgeInsets.symmetric(horizontal: 18),
                 child: ListTile(
                   title: Text(item.$2, style: titleMedium),
                   subtitle: subtitleBuilder?.call(context, index),

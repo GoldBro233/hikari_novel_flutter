@@ -94,8 +94,6 @@ class ReaderController extends GetxController {
 
   Rxn<String> currentBgImagePath = Rxn();
 
-  bool isInitialized = false;
-
   @override
   void onInit() async {
     super.onInit();
@@ -154,7 +152,6 @@ class ReaderController extends GetxController {
 
   //获取初始页面位置
   int getInitLocation() {
-    isInitialized = true;
     if (readerSettingsState.value.direction == ReaderDirection.upToDown) {
       try {
         int value = int.parse(Get.parameters["location"]!);
@@ -166,9 +163,10 @@ class ReaderController extends GetxController {
     } else {
       try {
         int value = int.parse(Get.parameters["location"]!);
-        currentIndex.value = value;
+        currentIndex.value = value; //FIXME 在build过程中赋值此变量会出错
         return value;
-      } catch (_) {
+      } catch (e) {
+        Log.d("getPos error -> ${e.toString()}");
         return 0;
       }
     }

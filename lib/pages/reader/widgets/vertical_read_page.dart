@@ -1,7 +1,9 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_widget_from_html/flutter_widget_from_html.dart';
 import 'package:get/get.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:hikari_novel_flutter/widgets/state_page.dart';
 
 import '../../../router/route_path.dart';
 import '../../../network/request.dart';
@@ -37,18 +39,19 @@ class _VerticalReadPageState extends State<VerticalReadPage> with WidgetsBinding
   TextStyle textStyle = TextStyle();
   EdgeInsets padding = EdgeInsets.zero;
 
-  double position = 0;
-
   late String _lastLayoutSig;
 
   @override
   void initState() {
     super.initState();
-    position = widget.initPosition.toDouble();
     _lastLayoutSig = _layoutSignature();
     WidgetsBinding.instance.addObserver(this);
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (widget.initPosition.toDouble() > widget.controller.position.maxScrollExtent) {
+        showErrorDialog("record_position_exceeds_max_range_tip".tr, [TextButton(onPressed: Get.back, child: Text("confirm".tr))]);
+        return;
+      }
       widget.controller.jumpTo(widget.initPosition.toDouble());
       widget.onScroll(widget.controller.offset, widget.controller.position.maxScrollExtent); //页面加载完成时，提醒保存进度
     });
@@ -68,7 +71,6 @@ class _VerticalReadPageState extends State<VerticalReadPage> with WidgetsBinding
     images = List<String>.from(widget.images); //转换为纯净的List<String>
     padding = widget.padding;
     if (text.isEmpty && images.isEmpty) {
-      position = 0;
       setState(() {});
       return;
     }
@@ -104,7 +106,12 @@ class _VerticalReadPageState extends State<VerticalReadPage> with WidgetsBinding
           padding: padding,
           child: Column(
             children: [
-              Text(text, textAlign: TextAlign.justify, style: textStyle),
+              // Text(text, textAlign: TextAlign.justify, style: textStyle),
+              HtmlWidget(
+                '<div style="text-align: justify;">${text.replaceAll('\n', '<br>')}</div>',
+                textStyle: textStyle,
+                enableCaching: true,
+              ),
               images.isEmpty
                   ? Container()
                   : ListView.separated(
