@@ -1,0 +1,93 @@
+name: Sync Upstream, Build and Release APK
+
+on:
+  schedule:
+    - cron: "0 0 * * *" # 每天执行一次
+  workflow_dispatch:
+
+jobs:
+  sync-and-build:
+    runs-on: ubuntu-latest
+    # 赋予推送到仓库的权限
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # 必须设置为 0，拉取完整的历史记录以便进行 Git 合并
+
+      - name: Configure Git
+        # 配置 Git 机器人账号，用于自动提交合并记录
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Sync with Upstream
+        id: sync
+        # 【重要】将下面的 URL 替换为主仓库的真实地址
+        run: |
+          git remote add upstream https://github.com/owner/repo.git
+          git fetch upstream main
+
+          # 计算主仓库比当前仓库多了多少个提交
+          NEW_COMMITS=$(git rev-list HEAD..upstream/main --count)
+
+          if [ "$NEW_COMMITS" -eq 0 ]; then
+            echo "主仓库没有更新，跳过后续步骤。"
+            echo "has_update=false" >> $GITHUB_OUTPUT
+          else
+            echo "发现主仓库有 $NEW_COMMITS 个新提交！准备合并..."
+            echo "has_update=true" >> $GITHUB_OUTPUT
+
+            # 执行合并，保留我们自己的 workflow 文件
+            git merge upstream/main --no-edit
+
+            # 将合并后的代码推送到你的仓库
+            git push origin main
+          fi
+
+      # ================= 下面是构建和发布步骤 =================
+
+      - name: Set up Java
+        # 只有在发现更新，或者手动触发时才执行构建
+        if: ${{ steps.sync.outputs.has_update == 'true' || github.event_name == 'workflow_dispatch' }}
+        uses: actions/setup-java@v4
+        with:
+          distribution: "zulu"
+          java-version: "17"
+
+      - name: Set up Flutter
+        if: ${{ steps.sync.outputs.has_update == 'true' || github.event_name == 'workflow_dispatch' }}
+        uses: subosito/flutter-action@v2
+        with:
+          channel: "stable"
+
+      - name: Accept Android Licenses
+        if: ${{ steps.sync.outputs.has_update == 'true' || github.event_name == 'workflow_dispatch' }}
+        run: yes | flutter doctor --android-licenses
+
+      - name: Install dependencies
+        if: ${{ steps.sync.outputs.has_update == 'true' || github.event_name == 'workflow_dispatch' }}
+        run: flutter pub get
+
+      - name: Build APK
+        if: ${{ steps.sync.outputs.has_update == 'true' || github.event_name == 'workflow_dispatch' }}
+        run: flutter build apk --release
+
+      - name: Generate Release Tag
+        if: ${{ steps.sync.outputs.has_update == 'true' || github.event_name == 'workflow_dispatch' }}
+        id: tag
+        run: echo "release_tag=sync-$(date +'%Y%m%d%H%M%S')" >> $GITHUB_OUTPUT
+
+      - name: Create Release and Upload APK
+        if: ${{ steps.sync.outputs.has_update == 'true' || github.event_name == 'workflow_dispatch' }}
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.tag.outputs.release_tag }}
+          name: Auto Release ${{ steps.tag.outputs.release_tag }}
+          files: build/app/outputs/flutter-apk/app-release.apk
+          body: "自动同步上游仓库并构建的最新版本。"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
