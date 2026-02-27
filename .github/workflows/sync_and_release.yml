@@ -28,7 +28,7 @@ jobs:
         id: sync
         # 【重要】将下面的 URL 替换为主仓库的真实地址
         run: |
-          git remote add upstream https://github.com/owner/repo.git
+          git remote add upstream https://github.com/15dd/hikari_novel_flutter.git
           git fetch upstream main
 
           # 计算主仓库比当前仓库多了多少个提交
