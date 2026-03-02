@@ -4,6 +4,15 @@ on:
   schedule:
     - cron: "0 0 * * *" # 每天执行一次
   workflow_dispatch:
+    inputs:
+      branch:
+        description: '选择要构建的分支'
+        required: true
+        default: 'main'
+        type: choice
+        options:
+          - main
+          - refactor/reader-optimization
 
 jobs:
   sync-and-build:
@@ -16,6 +25,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
+          ref: ${{ github.event.inputs.branch || 'main' }}
           fetch-depth: 0 # 必须设置为 0，拉取完整的历史记录以便进行 Git 合并
 
       - name: Configure Git
@@ -28,11 +38,14 @@ jobs:
         id: sync
         # 【重要】将下面的 URL 替换为主仓库的真实地址
         run: |
+          BRANCH="${{ github.event.inputs.branch || 'main' }}"
+          echo "当前构建分支: $BRANCH"
+
           git remote add upstream https://github.com/15dd/hikari_novel_flutter.git
-          git fetch upstream main
+          git fetch upstream $BRANCH
 
           # 计算主仓库比当前仓库多了多少个提交
-          NEW_COMMITS=$(git rev-list HEAD..upstream/main --count)
+          NEW_COMMITS=$(git rev-list HEAD..upstream/$BRANCH --count)
 
           if [ "$NEW_COMMITS" -eq 0 ]; then
             echo "主仓库没有更新，跳过后续步骤。"
@@ -42,10 +55,10 @@ jobs:
             echo "has_update=true" >> $GITHUB_OUTPUT
 
             # 执行合并，保留我们自己的 workflow 文件
-            git merge upstream/main --no-edit
+            git merge upstream/$BRANCH --no-edit
 
             # 将合并后的代码推送到你的仓库
-            git push origin main
+            git push origin $BRANCH
           fi
 
       - name: Check Last Build Time
@@ -160,6 +173,6 @@ jobs:
         if: ${{ steps.sync.outputs.has_update == 'true' || github.event_name == 'workflow_dispatch' || steps.check_build.outputs.need_refresh == 'true' }}
         uses: actions/upload-artifact@v4
         with:
-          name: app-release-apk-${{ steps.version.outputs.version }}
+          name: app-release-apk-${{ steps.version.outputs.version }}-${{ github.event.inputs.branch || 'main' }}
           path: ${{ steps.sign_apk.outputs.signedReleaseFile }}
           retention-days: 14
