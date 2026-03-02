@@ -102,6 +102,12 @@ jobs:
           echo "上游最新版本: $VERSION"
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
+          # 处理分支名，将 / 替换为 - 以避免文件系统问题
+          BRANCH="${{ github.event.inputs.branch || 'main' }}"
+          SAFE_BRANCH="${BRANCH//\//-}"
+          echo "安全分支名: $SAFE_BRANCH"
+          echo "safe_branch=$SAFE_BRANCH" >> $GITHUB_OUTPUT
+
       - name: Set up Java
         # 在以下情况执行构建：1) 有上游更新 2) 手动触发 3) 超过13天需要刷新
         if: ${{ steps.sync.outputs.has_update == 'true' || github.event_name == 'workflow_dispatch' || steps.check_build.outputs.need_refresh == 'true' }}
@@ -173,6 +179,6 @@ jobs:
         if: ${{ steps.sync.outputs.has_update == 'true' || github.event_name == 'workflow_dispatch' || steps.check_build.outputs.need_refresh == 'true' }}
         uses: actions/upload-artifact@v4
         with:
-          name: app-release-apk-${{ steps.version.outputs.version }}-${{ github.event.inputs.branch || 'main' }}
+          name: app-release-${{ steps.version.outputs.version }}-${{ steps.version.outputs.safe_branch }}.apk
           path: ${{ steps.sign_apk.outputs.signedReleaseFile }}
           retention-days: 14
