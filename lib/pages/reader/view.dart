@@ -1,7 +1,6 @@
 import 'package:easy_refresh/easy_refresh.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:hikari_novel_flutter/common/log.dart';
 import 'package:hikari_novel_flutter/models/reader_direction.dart';
 import 'package:hikari_novel_flutter/pages/reader/controller.dart';
 import 'package:hikari_novel_flutter/pages/reader/widgets/custom_header.dart';

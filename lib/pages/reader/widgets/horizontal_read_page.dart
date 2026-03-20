@@ -5,6 +5,75 @@ import 'package:get/get.dart';
 
 import '../../../network/request.dart';
 
+@visibleForTesting
+int horizontalDisplayPageCount(int rawPageCount, bool isDualPage) {
+  if (!isDualPage) return rawPageCount;
+  if (rawPageCount.isEven) return rawPageCount ~/ 2;
+  return (rawPageCount + 1) ~/ 2;
+}
+
+@visibleForTesting
+double horizontalLeafProgress({
+  required int currentDisplayIndex,
+  required int rawPageCount,
+  required bool wasDualPage,
+}) {
+  if (rawPageCount <= 1) return 0;
+  final leafIndex = wasDualPage ? currentDisplayIndex * 2 : currentDisplayIndex;
+  final clampedLeafIndex = leafIndex.clamp(0, rawPageCount - 1);
+  return clampedLeafIndex / (rawPageCount - 1);
+}
+
+@visibleForTesting
+int horizontalRestoreDisplayIndex({
+  required bool shouldUseInitialIndex,
+  required int initIndex,
+  required bool contentChanged,
+  required double? restoreProgress,
+  required int currentDisplayIndex,
+  required int newRawPageCount,
+  required bool isDualPage,
+}) {
+  final maxDisplayIndex = horizontalDisplayPageCount(newRawPageCount, isDualPage) - 1;
+  if (maxDisplayIndex < 0) return 0;
+  if (shouldUseInitialIndex) return initIndex.clamp(0, maxDisplayIndex);
+  if (contentChanged) return 0;
+  if (restoreProgress == null) return currentDisplayIndex.clamp(0, maxDisplayIndex);
+
+  final newLeafIndex = (restoreProgress * (newRawPageCount - 1)).round().clamp(0, newRawPageCount - 1);
+  final newDisplayIndex = isDualPage ? newLeafIndex ~/ 2 : newLeafIndex;
+  return newDisplayIndex.clamp(0, maxDisplayIndex);
+}
+
+@visibleForTesting
+String horizontalLayoutSignature({
+  required int textLength,
+  required int imageCount,
+  required TextStyle style,
+  required EdgeInsets padding,
+  required bool isDualPage,
+  required double dualPageSpacing,
+  required Size viewport,
+}) {
+  return [
+    textLength,
+    imageCount,
+    style.fontSize,
+    style.height,
+    style.letterSpacing,
+    style.wordSpacing,
+    style.color?.toARGB32(),
+    padding.left,
+    padding.right,
+    padding.top,
+    padding.bottom,
+    isDualPage,
+    dualPageSpacing,
+    viewport.width,
+    viewport.height,
+  ].join("|");
+}
+
 class HorizontalReadPage extends StatefulWidget {
   final String text;
   final List<String> images;
@@ -37,7 +106,7 @@ class HorizontalReadPage extends StatefulWidget {
   State<StatefulWidget> createState() => _HorizontalReadPageState();
 }
 
-class _HorizontalReadPageState extends State<HorizontalReadPage> with WidgetsBindingObserver {
+class _HorizontalReadPageState extends State<HorizontalReadPage> {
   List<Page> pages = [];
   String text = "";
   List<String> images = [];
@@ -45,43 +114,40 @@ class _HorizontalReadPageState extends State<HorizontalReadPage> with WidgetsBin
   TextStyle textStyle = const TextStyle();
   double fontHeight = 16.0;
   EdgeInsets padding = EdgeInsets.zero;
-  late Size lastSize;
 
   double pageWidth = 0;
   double pageHeight = 0;
   int index = 0; //HorizontalReadPage内部的页面，与PageController的页面无关
 
-  late String _lastLayoutSig;
+  String _lastLayoutSig = "";
+  bool _didInitializeLayout = false;
+  bool _didRestoreInitialIndex = false;
+  bool _lastAppliedDualPage = false;
+  int _layoutTaskId = 0;
+  double? _pendingRestoreProgress;
 
   @override
   void initState() {
     super.initState();
-    lastSize = Get.size;
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_didInitializeLayout) return;
+    _didInitializeLayout = true;
     _lastLayoutSig = _layoutSignature();
-    WidgetsBinding.instance.addObserver(this);
-    resetPage();
+    _resetPage(contentChanged: true);
   }
 
-  @override
-  void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
-    super.dispose();
-  }
-
-  @override
-  void didChangeMetrics() {
-    if (lastSize != Get.size) {
-      lastSize = Get.size;
-      resetPage();
-    }
-  }
-
-  void resetPage() {
+  void _resetPage({required bool contentChanged}) {
     text = widget.text;
     textStyle = widget.style;
     images = List<String>.from(widget.images); //转换为纯净的List<String>
     padding = widget.padding;
-    pageWidth = (Get.width - padding.left - padding.right).floorToDouble();
+    final viewportWidth = Get.width;
+    final viewportHeight = Get.height;
+    pageWidth = (viewportWidth - padding.left - padding.right).floorToDouble();
     pageWidth = widget.isDualPage ? (pageWidth - widget.dualPageSpacing * 2) / 2 : pageWidth;
     pageHeight = Get.height - padding.top - padding.bottom;
     if (text.isEmpty && images.isEmpty) {
@@ -91,11 +157,12 @@ class _HorizontalReadPageState extends State<HorizontalReadPage> with WidgetsBin
       });
       return;
     }
-    initPage();
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      widget.onPageChanged(index, _pageCount()); //页面加载完成时，提醒保存进度
-    });
+    if (!contentChanged && pages.isNotEmpty) {
+      _pendingRestoreProgress = _currentLeafProgress();
+    } else {
+      _pendingRestoreProgress = null;
+    }
+    _initPage(viewportWidth: viewportWidth, viewportHeight: viewportHeight, contentChanged: contentChanged);
   }
 
   @override
@@ -104,16 +171,11 @@ class _HorizontalReadPageState extends State<HorizontalReadPage> with WidgetsBin
 
     //这里比较排版几何参数（fontSize, textStyle）是否有变化
     //这里不能使用"widget.xxx != oldWidget.xxx"，这是在比较对象，而不是比较其中的参数。比如深浅模式切换导致页面重建，会重建TextStyle对象实例，最终误判
+    final contentChanged = widget.text != oldWidget.text || !listEquals(widget.images, oldWidget.images);
     final newSig = _layoutSignature();
-    if (newSig != _lastLayoutSig) {
+    if (contentChanged || newSig != _lastLayoutSig) {
       _lastLayoutSig = newSig;
-      if (widget.text != oldWidget.text && listEquals(widget.images, oldWidget.images)) { //判断章节是否切换
-        index = 0;
-        setState(() {
-          pages = [];
-        });
-      }
-      resetPage();
+      _resetPage(contentChanged: contentChanged);
     }
   }
 
@@ -132,15 +194,7 @@ class _HorizontalReadPageState extends State<HorizontalReadPage> with WidgetsBin
   }
 
   int _pageCount() {
-    if (widget.isDualPage) {
-      if (pages.length % 2 == 0) {
-        return (pages.length / 2).toInt();
-      } else {
-        return ((pages.length + 1) / 2).toInt();
-      }
-    } else {
-      return pages.length;
-    }
+    return horizontalDisplayPageCount(pages.length, widget.isDualPage);
   }
 
   Widget _buildPage(int index) {
@@ -284,7 +338,26 @@ class _HorizontalReadPageState extends State<HorizontalReadPage> with WidgetsBin
     );
   }
 
-  void initPage() async {
+  double _currentLeafProgress() {
+    return horizontalLeafProgress(currentDisplayIndex: index, rawPageCount: pages.length, wasDualPage: _lastAppliedDualPage);
+  }
+
+  int _resolveRestoreIndex({required bool contentChanged, required int newRawPageCount}) {
+    final nextIndex = horizontalRestoreDisplayIndex(
+      shouldUseInitialIndex: !_didRestoreInitialIndex,
+      initIndex: widget.initIndex,
+      contentChanged: contentChanged,
+      restoreProgress: _pendingRestoreProgress,
+      currentDisplayIndex: index,
+      newRawPageCount: newRawPageCount,
+      isDualPage: widget.isDualPage,
+    );
+    _didRestoreInitialIndex = true;
+    return nextIndex;
+  }
+
+  void _initPage({required double viewportWidth, required double viewportHeight, required bool contentChanged}) async {
+    final taskId = ++_layoutTaskId;
     double fontSize = textStyle.fontSize!;
     double lineHeight = textStyle.height!;
 
@@ -299,7 +372,7 @@ class _HorizontalReadPageState extends State<HorizontalReadPage> with WidgetsBin
     //计算一页中的最大行数
     int maxLine = (pageHeight / chineseCharSize.height).floor(); //去小数
 
-    var pages = await compute(
+    var nextPages = await compute(
       splitText,
       ComputeParameter(
         rawText: text,
@@ -315,13 +388,23 @@ class _HorizontalReadPageState extends State<HorizontalReadPage> with WidgetsBin
       ),
     );
 
-    this.pages = pages;
+    if (!mounted || taskId != _layoutTaskId) return;
+
+    final nextIndex = _resolveRestoreIndex(contentChanged: contentChanged, newRawPageCount: nextPages.length);
+    _pendingRestoreProgress = null;
+    pages = nextPages;
+    index = nextIndex;
+    pageWidth = (viewportWidth - padding.left - padding.right).floorToDouble();
+    pageWidth = widget.isDualPage ? (pageWidth - widget.dualPageSpacing * 2) / 2 : pageWidth;
+    pageHeight = viewportHeight - padding.top - padding.bottom;
+    _lastAppliedDualPage = widget.isDualPage;
     widget.onPageChanged(index, _pageCount());
 
     setState(() {}); //刷新UI
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      widget.controller.jumpToPage(widget.initIndex);
+      if (!mounted || taskId != _layoutTaskId || _pageCount() == 0 || !widget.controller.hasClients) return;
+      widget.controller.jumpToPage(index.clamp(0, _pageCount() - 1));
     });
   }
 
@@ -429,22 +512,15 @@ class _HorizontalReadPageState extends State<HorizontalReadPage> with WidgetsBin
 
   //排版几何参数的签名
   String _layoutSignature() {
-    final s = widget.style;
-    final p = widget.padding;
-
-    return [
-      widget.text.length,
-      widget.images.length,
-      s.fontSize,
-      s.height,
-      s.letterSpacing,
-      s.wordSpacing,
-      s.color?.toARGB32(),
-      p.left,
-      p.right,
-      p.top,
-      p.bottom,
-    ].join("|");
+    return horizontalLayoutSignature(
+      textLength: widget.text.length,
+      imageCount: widget.images.length,
+      style: widget.style,
+      padding: widget.padding,
+      isDualPage: widget.isDualPage,
+      dualPageSpacing: widget.dualPageSpacing,
+      viewport: Size(Get.width, Get.height),
+    );
   }
 }
 
