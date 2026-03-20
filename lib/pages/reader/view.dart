@@ -246,7 +246,7 @@ class ReaderPage extends StatelessWidget {
           key: _verticalReadPageKey,
           controller.text.value,
           controller.images,
-          initialOffset: controller.getInitLocation(),
+          initialOffset: controller.verticalBuildOffset,
           padding: padding,
           style: textStyle,
           paraSpacing: controller.readerSettingsState.value.readerParaSpacing,
@@ -292,7 +292,7 @@ class ReaderPage extends StatelessWidget {
       child: HorizontalReadPage(
         controller.text.value,
         controller.images,
-        initIndex: controller.getInitLocation(),
+        initIndex: controller.horizontalBuildIndex,
         padding: padding,
         style: textStyle,
         reverse: controller.readerSettingsState.value.direction == ReaderDirection.rightToLeft,

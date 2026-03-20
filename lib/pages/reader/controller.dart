@@ -27,6 +27,21 @@ import '../../network/api.dart';
 import '../../service/db_service.dart';
 import '../../service/local_storage_service.dart';
 
+@visibleForTesting
+int parseReaderRouteLocation(String? rawLocation) {
+  if (rawLocation == null) return 0;
+  return int.tryParse(rawLocation) ?? 0;
+}
+
+@visibleForTesting
+int readerBuildLocation({
+  required ReaderDirection direction,
+  required int currentIndex,
+  required int currentLocation,
+}) {
+  return direction == ReaderDirection.upToDown ? currentLocation : currentIndex;
+}
+
 class ReaderController extends GetxController {
   final _novelDetailController = Get.find<NovelDetailController>();
 
@@ -110,7 +125,7 @@ class ReaderController extends GetxController {
 
     checkFontFile(true);
 
-    getInitLocation(); //事先赋值一下对应的变量，防止在build过程中修改obx变量
+    _applyInitialLocationFromRoute();
 
     //延迟更新阅读记录
     //debounce / ever / interval 只能在 Controller 生命周期里创建一次
@@ -150,26 +165,18 @@ class ReaderController extends GetxController {
     super.onClose();
   }
 
-  //获取初始页面位置
-  int getInitLocation() {
+  void _applyInitialLocationFromRoute() {
+    final value = parseReaderRouteLocation(Get.parameters["location"]);
     if (readerSettingsState.value.direction == ReaderDirection.upToDown) {
-      try {
-        int value = int.parse(Get.parameters["location"]!);
-        currentLocation.value = value;
-        return value;
-      } catch (_) {
-        return 0;
-      }
+      currentLocation.value = value;
     } else {
-      try {
-        int value = int.parse(Get.parameters["location"]!);
-        currentIndex.value = value;
-        return value;
-      } catch (_) {
-        return 0;
-      }
+      currentIndex.value = value;
     }
   }
+
+  int get horizontalBuildIndex => currentIndex.value;
+
+  int get verticalBuildOffset => currentLocation.value;
 
   Stream<DateTime> clockStream() => Stream.periodic(const Duration(seconds: 1), (_) => DateTime.now());
 
