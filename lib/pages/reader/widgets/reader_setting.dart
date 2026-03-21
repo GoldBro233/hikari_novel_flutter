@@ -182,7 +182,7 @@ class ReaderSettingPage extends StatelessWidget {
         ),
         Obx(() {
           final dualPageMode = switch (controller.readerSettingsState.value.dualPageMode) {
-            DualPageMode.auto => Get.context!.isLargeScreen(),
+            DualPageMode.auto => Get.context!.shouldAutoUseDualPage(),
             DualPageMode.enabled => true,
             DualPageMode.disabled => false,
           };
