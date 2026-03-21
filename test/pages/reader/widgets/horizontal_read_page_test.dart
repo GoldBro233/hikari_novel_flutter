@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:hikari_novel_flutter/models/reader_initial_position_target.dart';
 import 'package:hikari_novel_flutter/pages/reader/widgets/horizontal_read_page.dart';
 
 void main() {
@@ -51,28 +52,33 @@ void main() {
     expect(landscapeSig, isNot(portraitSig));
   });
 
-  test('restores reading position on relayout instead of jumping back to initIndex', () {
-    final restoreProgress = horizontalLeafProgress(
-      currentDisplayIndex: 3,
-      rawPageCount: 12,
-      wasDualPage: false,
-    );
+  test(
+    'restores reading position on relayout instead of jumping back to initIndex',
+    () {
+      final restoreProgress = horizontalLeafProgress(
+        currentDisplayIndex: 3,
+        rawPageCount: 12,
+        wasDualPage: false,
+      );
 
-    final restoredIndex = horizontalRestoreDisplayIndex(
-      shouldUseInitialIndex: false,
-      initIndex: 0,
-      contentChanged: false,
-      restoreProgress: restoreProgress,
-      currentDisplayIndex: 0,
-      newRawPageCount: 16,
-      isDualPage: false,
-    );
+      final restoredIndex = horizontalRestoreDisplayIndex(
+        initialPositionTarget: ReaderInitialPositionTarget.current,
+        shouldUseInitialIndex: false,
+        initIndex: 0,
+        contentChanged: false,
+        restoreProgress: restoreProgress,
+        currentDisplayIndex: 0,
+        newRawPageCount: 16,
+        isDualPage: false,
+      );
 
-    expect(restoredIndex, greaterThan(0));
-  });
+      expect(restoredIndex, greaterThan(0));
+    },
+  );
 
   test('uses initIndex only for the first layout', () {
     final initialIndex = horizontalRestoreDisplayIndex(
+      initialPositionTarget: ReaderInitialPositionTarget.current,
       shouldUseInitialIndex: true,
       initIndex: 4,
       contentChanged: false,
@@ -83,6 +89,7 @@ void main() {
     );
 
     final relayoutIndex = horizontalRestoreDisplayIndex(
+      initialPositionTarget: ReaderInitialPositionTarget.current,
       shouldUseInitialIndex: false,
       initIndex: 4,
       contentChanged: false,
@@ -94,5 +101,38 @@ void main() {
 
     expect(initialIndex, 4);
     expect(relayoutIndex, isNot(4));
+  });
+
+  test(
+    'content change to next chapter ignores stale initIndex and restores to first page',
+    () {
+      final restoredIndex = horizontalRestoreDisplayIndex(
+        initialPositionTarget: ReaderInitialPositionTarget.start,
+        shouldUseInitialIndex: true,
+        initIndex: 19,
+        contentChanged: true,
+        restoreProgress: null,
+        currentDisplayIndex: 19,
+        newRawPageCount: 30,
+        isDualPage: false,
+      );
+
+      expect(restoredIndex, 0);
+    },
+  );
+
+  test('content change to previous chapter restores to last page', () {
+    final restoredIndex = horizontalRestoreDisplayIndex(
+      initialPositionTarget: ReaderInitialPositionTarget.end,
+      shouldUseInitialIndex: true,
+      initIndex: 0,
+      contentChanged: true,
+      restoreProgress: null,
+      currentDisplayIndex: 0,
+      newRawPageCount: 30,
+      isDualPage: false,
+    );
+
+    expect(restoredIndex, 29);
   });
 }

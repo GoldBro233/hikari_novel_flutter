@@ -1,14 +1,33 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:hikari_novel_flutter/models/reader_initial_position_target.dart';
 
 import '../../../router/route_path.dart';
 import '../../../network/request.dart';
+
+@visibleForTesting
+double verticalRestoreOffset({
+  required ReaderInitialPositionTarget initialPositionTarget,
+  required int initialOffset,
+  required double maxScrollExtent,
+}) {
+  switch (initialPositionTarget) {
+    case ReaderInitialPositionTarget.start:
+      return 0;
+    case ReaderInitialPositionTarget.end:
+      return maxScrollExtent;
+    case ReaderInitialPositionTarget.current:
+      return initialOffset.toDouble().clamp(0, maxScrollExtent);
+  }
+}
 
 class VerticalReadPage extends StatefulWidget {
   final String text;
   final List<String> images;
   final int initialOffset;
+  final ReaderInitialPositionTarget initialPositionTarget;
   final EdgeInsets padding;
   final TextStyle style;
   final int paraSpacing;
@@ -19,6 +38,7 @@ class VerticalReadPage extends StatefulWidget {
     this.text,
     this.images, {
     required this.initialOffset,
+    required this.initialPositionTarget,
     required this.padding,
     required this.style,
     required this.paraSpacing,
@@ -91,8 +111,11 @@ class VerticalReadPageState extends State<VerticalReadPage> {
       return;
     }
 
-    double targetOffset = widget.initialOffset.toDouble();
-    targetOffset = targetOffset.clamp(0, position.maxScrollExtent);
+    final targetOffset = verticalRestoreOffset(
+      initialPositionTarget: widget.initialPositionTarget,
+      initialOffset: widget.initialOffset,
+      maxScrollExtent: position.maxScrollExtent,
+    );
 
     controller.jumpTo(targetOffset);
 
@@ -139,8 +162,18 @@ class VerticalReadPageState extends State<VerticalReadPage> {
 
     //这里比较排版几何参数（fontSize, textStyle）是否有变化
     //这里不能使用"widget.xxx != oldWidget.xxx"，这是在比较对象，而不是比较其中的参数。比如深浅模式切换导致页面重建，会重建TextStyle对象实例，最终误判
+    final contentChanged =
+        widget.text != oldWidget.text ||
+        !listEquals(widget.images, oldWidget.images);
+    final restoreInputChanged =
+        widget.initialOffset != oldWidget.initialOffset ||
+        widget.initialPositionTarget != oldWidget.initialPositionTarget ||
+        contentChanged;
+    if (restoreInputChanged) {
+      _didRestorePosition = false;
+    }
     final newSig = _layoutSignature();
-    if (newSig != _lastLayoutSig) {
+    if (contentChanged || restoreInputChanged || newSig != _lastLayoutSig) {
       _lastLayoutSig = newSig;
       resetPage();
     }
@@ -183,7 +216,9 @@ class VerticalReadPageState extends State<VerticalReadPage> {
             style: textStyle,
             children: [
               WidgetSpan(
-                child: SizedBox(width: textStyle.fontSize! * paraIndent), //按汉字宽度缩进
+                child: SizedBox(
+                  width: textStyle.fontSize! * paraIndent,
+                ), //按汉字宽度缩进
               ),
               TextSpan(text: content),
             ],
@@ -198,15 +233,36 @@ class VerticalReadPageState extends State<VerticalReadPage> {
       child: Padding(
         padding: const EdgeInsets.only(bottom: 20),
         child: GestureDetector(
-          onDoubleTap: () => Get.toNamed(RoutePath.photo, arguments: {"gallery_mode": true, "list": widget.images, "index": index}),
-          onLongPress: () => Get.toNamed(RoutePath.photo, arguments: {"gallery_mode": true, "list": widget.images, "index": index}),
+          onDoubleTap: () => Get.toNamed(
+            RoutePath.photo,
+            arguments: {
+              "gallery_mode": true,
+              "list": widget.images,
+              "index": index,
+            },
+          ),
+          onLongPress: () => Get.toNamed(
+            RoutePath.photo,
+            arguments: {
+              "gallery_mode": true,
+              "list": widget.images,
+              "index": index,
+            },
+          ),
           child: CachedNetworkImage(
             width: double.infinity,
             imageUrl: url,
             httpHeaders: Request.userAgent,
             fit: BoxFit.fitWidth,
-            progressIndicatorBuilder: (context, url, progress) => Center(child: CircularProgressIndicator(value: progress.progress)),
-            errorWidget: (context, url, error) => Column(children: [const Icon(Icons.error_outline), Text(error.toString())]),
+            progressIndicatorBuilder: (context, url, progress) => Center(
+              child: CircularProgressIndicator(value: progress.progress),
+            ),
+            errorWidget: (context, url, error) => Column(
+              children: [
+                const Icon(Icons.error_outline),
+                Text(error.toString()),
+              ],
+            ),
           ),
         ),
       ),
@@ -214,7 +270,9 @@ class VerticalReadPageState extends State<VerticalReadPage> {
   }
 
   void _splitItems() {
-    final paragraphs = widget.text.split('\n\n').where((e) => e.trim().isNotEmpty);
+    final paragraphs = widget.text
+        .split('\n\n')
+        .where((e) => e.trim().isNotEmpty);
 
     _items = [];
 

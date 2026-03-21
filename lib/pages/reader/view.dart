@@ -37,7 +37,9 @@ class ReaderPage extends StatelessWidget {
     fontFamily: controller.readerSettingsState.value.textFamily,
     height: controller.readerSettingsState.value.lineSpacing,
     fontSize: controller.readerSettingsState.value.fontSize,
-    color: controller.currentTextColor.value ?? Theme.of(Get.context!).colorScheme.onSurface,
+    color:
+        controller.currentTextColor.value ??
+        Theme.of(Get.context!).colorScheme.onSurface,
   );
 
   @override
@@ -49,12 +51,20 @@ class ReaderPage extends StatelessWidget {
             () => controller.pageState.value == PageState.success
                 ? GestureDetector(
                     behavior: HitTestBehavior.translucent, //防止上下滚动事件被拦截，只拦截点击事件
-                    onTap: () => controller.showBar.value = !controller.showBar.value,
+                    onTap: () =>
+                        controller.showBar.value = !controller.showBar.value,
                     child: ReaderBackground(
                       child: Obx(
                         () => Padding(
                           padding: EdgeInsets.only(
-                            bottom: controller.readerSettingsState.value.showStatusBar ? kStatusBarPadding + MediaQuery.of(context).padding.bottom : 0,
+                            bottom:
+                                controller
+                                    .readerSettingsState
+                                    .value
+                                    .showStatusBar
+                                ? kStatusBarPadding +
+                                      MediaQuery.of(context).padding.bottom
+                                : 0,
                           ),
                           child: _buildReadPage(context),
                         ),
@@ -65,7 +75,9 @@ class ReaderPage extends StatelessWidget {
           ),
           Obx(() {
             final bool isEnabled =
-                controller.pageState.value == PageState.success && controller.readerSettingsState.value.direction != ReaderDirection.upToDown;
+                controller.pageState.value == PageState.success &&
+                controller.readerSettingsState.value.direction !=
+                    ReaderDirection.upToDown;
 
             return isEnabled
                 ? Positioned.fill(
@@ -75,7 +87,13 @@ class ReaderPage extends StatelessWidget {
                           flex: 1,
                           child: GestureDetector(
                             onTap: () =>
-                                controller.readerSettingsState.value.direction == ReaderDirection.leftToRight ? controller.prevPage() : controller.nextPage(),
+                                controller
+                                        .readerSettingsState
+                                        .value
+                                        .direction ==
+                                    ReaderDirection.leftToRight
+                                ? controller.prevPage()
+                                : controller.nextPage(),
                             behavior: HitTestBehavior.translucent,
                           ),
                         ),
@@ -84,7 +102,13 @@ class ReaderPage extends StatelessWidget {
                           flex: 1,
                           child: GestureDetector(
                             onTap: () =>
-                                controller.readerSettingsState.value.direction == ReaderDirection.leftToRight ? controller.nextPage() : controller.prevPage(),
+                                controller
+                                        .readerSettingsState
+                                        .value
+                                        .direction ==
+                                    ReaderDirection.leftToRight
+                                ? controller.nextPage()
+                                : controller.prevPage(),
                             behavior: HitTestBehavior.translucent,
                           ),
                         ),
@@ -93,11 +117,19 @@ class ReaderPage extends StatelessWidget {
                   )
                 : Container();
           }),
-          Obx(() => Offstage(offstage: controller.pageState.value != PageState.loading, child: const LoadingPage())),
+          Obx(
+            () => Offstage(
+              offstage: controller.pageState.value != PageState.loading,
+              child: const LoadingPage(),
+            ),
+          ),
           Obx(
             () => Offstage(
               offstage: controller.pageState.value != PageState.error,
-              child: ErrorMessage(msg: controller.errorMsg, action: controller.getContent),
+              child: ErrorMessage(
+                msg: controller.errorMsg,
+                action: controller.getContent,
+              ),
             ),
           ),
           _buildBottomStatusBar(context),
@@ -106,11 +138,19 @@ class ReaderPage extends StatelessWidget {
             //顶栏
             double statusBarHeight = MediaQuery.of(context).padding.top;
             return AnimatedPositioned(
-              top: controller.showBar.value ? 0 : -(kToolbarHeight + statusBarHeight),
+              top: controller.showBar.value
+                  ? 0
+                  : -(kToolbarHeight + statusBarHeight),
               left: 0,
               right: 0,
               duration: Duration(milliseconds: 100),
-              child: AppBar(backgroundColor: Theme.of(context).colorScheme.secondaryContainer, title: Text(controller.chapterTitle.value), titleSpacing: 0),
+              child: AppBar(
+                backgroundColor: Theme.of(
+                  context,
+                ).colorScheme.secondaryContainer,
+                title: Text(controller.chapterTitle.value),
+                titleSpacing: 0,
+              ),
             );
           }),
           Obx(() {
@@ -120,7 +160,9 @@ class ReaderPage extends StatelessWidget {
             return AnimatedPositioned(
               left: 0,
               right: 0,
-              bottom: controller.showBar.value ? 0 : -(navigationBarHeight + bottomBarHeight),
+              bottom: controller.showBar.value
+                  ? 0
+                  : -(navigationBarHeight + bottomBarHeight),
               duration: const Duration(milliseconds: 100),
               child: Container(
                 height: navigationBarHeight + bottomBarHeight,
@@ -129,13 +171,20 @@ class ReaderPage extends StatelessWidget {
                 child: Obx(
                   () => Column(
                     children: [
-                      SizedBox(width: double.infinity, child: _buildProgressBar(context)),
+                      SizedBox(
+                        width: double.infinity,
+                        child: _buildProgressBar(context),
+                      ),
                       Row(
                         children: [
                           Expanded(
                             child: IconButton(
                               onPressed: () {
-                                if (controller.readerSettingsState.value.direction == ReaderDirection.rightToLeft) {
+                                if (controller
+                                        .readerSettingsState
+                                        .value
+                                        .direction ==
+                                    ReaderDirection.rightToLeft) {
                                   controller.nextChapter();
                                 } else {
                                   controller.prevChapter();
@@ -145,10 +194,17 @@ class ReaderPage extends StatelessWidget {
                             ),
                           ),
                           Expanded(
-                            child: IconButton(onPressed: () => _showCatalogue(context), icon: const Icon(Icons.list_alt)),
+                            child: IconButton(
+                              onPressed: () => _showCatalogue(context),
+                              icon: const Icon(Icons.list_alt),
+                            ),
                           ),
                           Expanded(
-                            child: IconButton(onPressed: () => Get.toNamed(RoutePath.readerSetting), icon: const Icon(Icons.settings_outlined)),
+                            child: IconButton(
+                              onPressed: () =>
+                                  Get.toNamed(RoutePath.readerSetting),
+                              icon: const Icon(Icons.settings_outlined),
+                            ),
                           ),
                           TtsService.instance.enabled.value
                               ? Expanded(
@@ -157,9 +213,15 @@ class ReaderPage extends StatelessWidget {
                                     onPressed: () async {
                                       final tts = TtsService.instance;
                                       final text = controller.text.value;
-                                      final cleaned = text.replaceAll(RegExp(r'\s+'), ' ').trim();
+                                      final cleaned = text
+                                          .replaceAll(RegExp(r'\s+'), ' ')
+                                          .trim();
                                       if (cleaned.isEmpty) {
-                                        showSnackBar(message: "chapter_content_loading_tip".tr, context: context);
+                                        showSnackBar(
+                                          message:
+                                              "chapter_content_loading_tip".tr,
+                                          context: context,
+                                        );
                                         return;
                                       }
 
@@ -167,7 +229,8 @@ class ReaderPage extends StatelessWidget {
                                         await tts.stop();
                                         return;
                                       }
-                                      if (tts.isPaused.value && tts.isSessionActive.value) {
+                                      if (tts.isPaused.value &&
+                                          tts.isSessionActive.value) {
                                         await tts.resumeSession();
                                         return;
                                       }
@@ -177,9 +240,13 @@ class ReaderPage extends StatelessWidget {
                                     icon: Obx(() {
                                       final tts = TtsService.instance;
                                       if (tts.isPlaying.value) {
-                                        return const Icon(Icons.stop_circle_outlined);
+                                        return const Icon(
+                                          Icons.stop_circle_outlined,
+                                        );
                                       }
-                                      return const Icon(Icons.play_circle_outline);
+                                      return const Icon(
+                                        Icons.play_circle_outline,
+                                      );
                                     }),
                                   ),
                                 )
@@ -187,7 +254,11 @@ class ReaderPage extends StatelessWidget {
                           Expanded(
                             child: IconButton(
                               onPressed: () {
-                                if (controller.readerSettingsState.value.direction == ReaderDirection.rightToLeft) {
+                                if (controller
+                                        .readerSettingsState
+                                        .value
+                                        .direction ==
+                                    ReaderDirection.rightToLeft) {
                                   controller.prevChapter();
                                 } else {
                                   controller.nextChapter();
@@ -212,7 +283,10 @@ class ReaderPage extends StatelessWidget {
   Widget _buildReadPage(BuildContext context) {
     return Obx(() {
       if (controller.pageState.value == PageState.success) {
-        return controller.readerSettingsState.value.direction == ReaderDirection.upToDown ? _buildVertical(context) : _buildHorizontal(context);
+        return controller.readerSettingsState.value.direction ==
+                ReaderDirection.upToDown
+            ? _buildVertical(context)
+            : _buildHorizontal(context);
       } else {
         return Container();
       }
@@ -226,17 +300,29 @@ class ReaderPage extends StatelessWidget {
         header: MaterialHeader2(
           triggerOffset: 80,
           child: Container(
-            decoration: BoxDecoration(color: Theme.of(context).colorScheme.primaryContainer, borderRadius: BorderRadius.circular(24)),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.primaryContainer,
+              borderRadius: BorderRadius.circular(24),
+            ),
             padding: const EdgeInsets.all(12),
-            child: Icon(Icons.arrow_circle_up, color: Theme.of(context).colorScheme.primary),
+            child: Icon(
+              Icons.arrow_circle_up,
+              color: Theme.of(context).colorScheme.primary,
+            ),
           ),
         ),
         footer: MaterialFooter2(
           triggerOffset: 80,
           child: Container(
-            decoration: BoxDecoration(color: Theme.of(context).colorScheme.primaryContainer, borderRadius: BorderRadius.circular(24)),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.primaryContainer,
+              borderRadius: BorderRadius.circular(24),
+            ),
             padding: const EdgeInsets.all(12),
-            child: Icon(Icons.arrow_circle_down, color: Theme.of(context).colorScheme.primary),
+            child: Icon(
+              Icons.arrow_circle_down,
+              color: Theme.of(context).colorScheme.primary,
+            ),
           ),
         ),
         refreshOnStart: false,
@@ -247,6 +333,7 @@ class ReaderPage extends StatelessWidget {
           controller.text.value,
           controller.images,
           initialOffset: controller.verticalBuildOffset,
+          initialPositionTarget: controller.buildInitialPositionTarget,
           padding: padding,
           style: textStyle,
           paraSpacing: controller.readerSettingsState.value.readerParaSpacing,
@@ -256,10 +343,15 @@ class ReaderPage extends StatelessWidget {
               //仅一页的情况下
               controller.currentLocation.value = 0;
               controller.verticalProgress.value = 100;
+              controller.markInitialPositionApplied();
               controller.setReadHistory(); //立即更新历史阅读记录
             } else if (max > 0) {
               controller.currentLocation.value = position.toInt();
-              controller.verticalProgress.value = ((position.toInt() / max.toInt()) * 100).clamp(0, 100).toInt();
+              controller.verticalProgress.value =
+                  ((position.toInt() / max.toInt()) * 100)
+                      .clamp(0, 100)
+                      .toInt();
+              controller.markInitialPositionApplied();
               //由controller的debounce监听location变化，判断是否更新历史阅读记录
             }
           },
@@ -273,17 +365,29 @@ class ReaderPage extends StatelessWidget {
       header: MaterialHeader2(
         triggerOffset: 80,
         child: Container(
-          decoration: BoxDecoration(color: Theme.of(context).colorScheme.primaryContainer, borderRadius: BorderRadius.circular(24)),
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.primaryContainer,
+            borderRadius: BorderRadius.circular(24),
+          ),
           padding: const EdgeInsets.all(12),
-          child: Icon(Icons.arrow_circle_left_outlined, color: Theme.of(context).colorScheme.primary),
+          child: Icon(
+            Icons.arrow_circle_left_outlined,
+            color: Theme.of(context).colorScheme.primary,
+          ),
         ),
       ),
       footer: MaterialFooter2(
         triggerOffset: 80,
         child: Container(
-          decoration: BoxDecoration(color: Theme.of(context).colorScheme.primaryContainer, borderRadius: BorderRadius.circular(24)),
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.primaryContainer,
+            borderRadius: BorderRadius.circular(24),
+          ),
           padding: const EdgeInsets.all(12),
-          child: Icon(Icons.arrow_circle_right_outlined, color: Theme.of(context).colorScheme.primary),
+          child: Icon(
+            Icons.arrow_circle_right_outlined,
+            color: Theme.of(context).colorScheme.primary,
+          ),
         ),
       ),
       refreshOnStart: false,
@@ -293,33 +397,49 @@ class ReaderPage extends StatelessWidget {
         controller.text.value,
         controller.images,
         initIndex: controller.horizontalBuildIndex,
+        initialPositionTarget: controller.buildInitialPositionTarget,
         padding: padding,
         style: textStyle,
-        reverse: controller.readerSettingsState.value.direction == ReaderDirection.rightToLeft,
+        reverse:
+            controller.readerSettingsState.value.direction ==
+            ReaderDirection.rightToLeft,
         isDualPage: controller.isDualPage,
         dualPageSpacing: controller.readerSettingsState.value.dualPageSpacing,
         controller: controller.pageController,
         onPageChanged: (index, max) {
           controller.currentIndex.value = index;
           controller.maxPage.value = max;
+          controller.markInitialPositionApplied();
           if (max == 1 && index == 0) {
             //仅一页的情况下
             controller.horizontalProgress.value = 100;
             controller.setReadHistory(); //立即更新历史阅读记录
           } else if (max > 0) {
-            controller.horizontalProgress.value = int.parse(((index + 1) / max * 100.0).toStringAsFixed(0)).clamp(0, 100);
+            controller.horizontalProgress.value = int.parse(
+              ((index + 1) / max * 100.0).toStringAsFixed(0),
+            ).clamp(0, 100);
             //由controller的debounce监听currentIndex变化，判断是否更新历史阅读记录
           }
         },
-        onViewImage: (index) => Get.toNamed(RoutePath.photo, arguments: {"gallery_mode": true, "list": controller.images, "index": index}),
+        onViewImage: (index) => Get.toNamed(
+          RoutePath.photo,
+          arguments: {
+            "gallery_mode": true,
+            "list": controller.images,
+            "index": index,
+          },
+        ),
       ),
     );
   }
 
   Widget _buildProgressBar(BuildContext context) {
     return Obx(() {
-      if (controller.pageState.value != PageState.success) return SizedBox(height: 48, child: Container());
-      if (controller.readerSettingsState.value.direction == ReaderDirection.upToDown) {
+      if (controller.pageState.value != PageState.success) {
+        return SizedBox(height: 48, child: Container());
+      }
+      if (controller.readerSettingsState.value.direction ==
+          ReaderDirection.upToDown) {
         int value = controller.verticalProgress.value;
 
         return SizedBox(
@@ -348,7 +468,10 @@ class ReaderPage extends StatelessWidget {
         int max = controller.maxPage.value;
 
         if (value > max || max == 1) {
-          return SizedBox(height: 48, child: Center(child: Text("only_one_page".tr)));
+          return SizedBox(
+            height: 48,
+            child: Center(child: Text("only_one_page".tr)),
+          );
         }
         return SizedBox(
           height: 48,
@@ -357,7 +480,11 @@ class ReaderPage extends StatelessWidget {
               SizedBox(
                 width: 60,
                 child: Center(
-                  child: controller.readerSettingsState.value.direction == ReaderDirection.leftToRight ? Text(value.toString()) : Text(max.toString()),
+                  child:
+                      controller.readerSettingsState.value.direction ==
+                          ReaderDirection.leftToRight
+                      ? Text(value.toString())
+                      : Text(max.toString()),
                 ),
               ),
               Expanded(
@@ -368,13 +495,19 @@ class ReaderPage extends StatelessWidget {
                   divisions: max - 1,
                   onChanged: (v) => controller.jumpToPage((v - 1).toInt()),
                   focusNode: null,
-                  reversed: controller.readerSettingsState.value.direction != ReaderDirection.leftToRight,
+                  reversed:
+                      controller.readerSettingsState.value.direction !=
+                      ReaderDirection.leftToRight,
                 ),
               ),
               SizedBox(
                 width: 60,
                 child: Center(
-                  child: controller.readerSettingsState.value.direction == ReaderDirection.leftToRight ? Text(max.toString()) : Text(value.toString()),
+                  child:
+                      controller.readerSettingsState.value.direction ==
+                          ReaderDirection.leftToRight
+                      ? Text(max.toString())
+                      : Text(value.toString()),
                 ),
               ),
             ],
@@ -408,7 +541,10 @@ class ReaderPage extends StatelessWidget {
                       shape: const Border(),
                       title: Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 6),
-                        child: Text(volume.title, style: const TextStyle(fontSize: 15)),
+                        child: Text(
+                          volume.title,
+                          style: const TextStyle(fontSize: 15),
+                        ),
                       ),
                       children: volume.chapters.asMap().entries.map((entry) {
                         final chapterIndex = entry.key;
@@ -418,23 +554,46 @@ class ReaderPage extends StatelessWidget {
                           title: Row(
                             crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
-                              volumeIndex == controller.currentVolumeIndex && chapterIndex == controller.currentChapterIndex
+                              volumeIndex == controller.currentVolumeIndex &&
+                                      chapterIndex ==
+                                          controller.currentChapterIndex
                                   ? Row(
                                       children: [
-                                        SizedBox(height: 22, child: Icon(Icons.arrow_circle_right, color: Theme.of(context).colorScheme.primary)),
+                                        SizedBox(
+                                          height: 22,
+                                          child: Icon(
+                                            Icons.arrow_circle_right,
+                                            color: Theme.of(
+                                              context,
+                                            ).colorScheme.primary,
+                                          ),
+                                        ),
                                         const SizedBox(width: 10),
                                       ],
                                     )
                                   : Container(),
                               Text(
                                 chapter.title,
-                                style: volumeIndex == controller.currentVolumeIndex && chapterIndex == controller.currentChapterIndex
-                                    ? TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.primary)
+                                style:
+                                    volumeIndex ==
+                                            controller.currentVolumeIndex &&
+                                        chapterIndex ==
+                                            controller.currentChapterIndex
+                                    ? TextStyle(
+                                        fontSize: 17,
+                                        fontWeight: FontWeight.bold,
+                                        color: Theme.of(
+                                          context,
+                                        ).colorScheme.primary,
+                                      )
                                     : const TextStyle(fontSize: 13),
                               ),
                             ],
                           ),
-                          contentPadding: const EdgeInsets.only(left: 50.0, right: 10.0),
+                          contentPadding: const EdgeInsets.only(
+                            left: 50.0,
+                            right: 10.0,
+                          ),
                           onTap: () {
                             controller.currentVolumeIndex = volumeIndex;
                             controller.currentChapterIndex = chapterIndex;
@@ -461,9 +620,16 @@ class ReaderPage extends StatelessWidget {
       bottom: 4,
       child: Obx(
         () => Offstage(
-          offstage: !(controller.readerSettingsState.value.showStatusBar && controller.pageState.value == PageState.success),
+          offstage:
+              !(controller.readerSettingsState.value.showStatusBar &&
+                  controller.pageState.value == PageState.success),
           child: Padding(
-            padding: EdgeInsets.fromLTRB(12, 0, 12, MediaQuery.of(context).padding.bottom),
+            padding: EdgeInsets.fromLTRB(
+              12,
+              0,
+              12,
+              MediaQuery.of(context).padding.bottom,
+            ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.center,
@@ -473,18 +639,40 @@ class ReaderPage extends StatelessWidget {
                   builder: (_, snapshot) {
                     final now = snapshot.data ?? DateTime.now();
                     final timeString = DateFormat('HH:mm').format(now);
-                    return Text(timeString, style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.onSurface));
+                    return Text(
+                      timeString,
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
+                    );
                   },
                 ),
                 const SizedBox(width: 8),
                 _buildBattery(context, controller.batteryLevel.value),
-                Text("${controller.batteryLevel.value}%", style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.onSurface)),
+                Text(
+                  "${controller.batteryLevel.value}%",
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                ),
                 const Spacer(),
-                controller.readerSettingsState.value.direction == ReaderDirection.upToDown
-                    ? Text("${controller.verticalProgress.value} %", style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.onSurface))
+                controller.readerSettingsState.value.direction ==
+                        ReaderDirection.upToDown
+                    ? Text(
+                        "${controller.verticalProgress.value} %",
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
+                      )
                     : Text(
                         "${controller.currentIndex.value + 1} / ${controller.maxPage.value}",
-                        style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.onSurface),
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
                       ),
               ],
             ),
