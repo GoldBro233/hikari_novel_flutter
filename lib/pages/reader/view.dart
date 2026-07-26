@@ -1,13 +1,13 @@
 import 'package:easy_refresh/easy_refresh.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:hikari_novel_flutter/common/log.dart';
 import 'package:hikari_novel_flutter/models/reader_direction.dart';
 import 'package:hikari_novel_flutter/pages/reader/controller.dart';
 import 'package:hikari_novel_flutter/pages/reader/widgets/custom_header.dart';
 import 'package:hikari_novel_flutter/pages/reader/widgets/custom_slider.dart';
 import 'package:hikari_novel_flutter/pages/reader/widgets/horizontal_read_page.dart';
 import 'package:hikari_novel_flutter/pages/reader/widgets/reader_background.dart';
+import 'package:hikari_novel_flutter/pages/reader/widgets/reader_setting.dart';
 import 'package:hikari_novel_flutter/pages/reader/widgets/vertical_read_page.dart';
 import 'package:hikari_novel_flutter/widgets/state_page.dart';
 import 'package:intl/intl.dart';
@@ -61,11 +61,7 @@ class ReaderPage extends StatelessWidget {
                 ? ReaderBackground(
                     child: Obx(
                       () => Padding(
-                        padding: EdgeInsets.only(
-                          bottom: _useOverlayBottomStatusBar()
-                              ? kStatusBarPadding + MediaQuery.of(context).padding.bottom
-                              : 0,
-                        ),
+                        padding: EdgeInsets.only(bottom: _useOverlayBottomStatusBar() ? kStatusBarPadding + MediaQuery.of(context).padding.bottom : 0),
                         child: _buildReadPage(context),
                       ),
                     ),
@@ -127,7 +123,21 @@ class ReaderPage extends StatelessWidget {
                             child: IconButton(onPressed: () => _showCatalogue(context), icon: const Icon(Icons.list_alt)),
                           ),
                           Expanded(
-                            child: IconButton(onPressed: () => Get.toNamed(RoutePath.readerSetting), icon: const Icon(Icons.settings_outlined)),
+                            child: IconButton(
+                              onPressed: () => showModalBottomSheet(
+                                context: context,
+                                isScrollControlled: true,
+                                showDragHandle: true,
+                                builder: (_) => Scaffold(
+                                  appBar: AppBar(
+                                    leading: IconButton(onPressed: Get.back, icon: const Icon(Icons.close)),
+                                    title: Text("setting".tr),
+                                  ),
+                                  body: ReaderSettingPage(),
+                                ),
+                              ),
+                              icon: const Icon(Icons.settings_outlined),
+                            ),
                           ),
                           TtsService.instance.enabled.value
                               ? Expanded(
@@ -322,7 +332,9 @@ class ReaderPage extends StatelessWidget {
 
   Widget _buildProgressBar(BuildContext context) {
     return Obx(() {
-      if (controller.pageState.value != PageState.success) return SizedBox(height: 48, child: Container());
+      if (controller.pageState.value != PageState.success) {
+        return SizedBox(height: 48, child: Container());
+      }
       if (controller.readerSettingsState.value.direction == ReaderDirection.upToDown) {
         int value = controller.verticalProgress.value;
 
@@ -467,10 +479,7 @@ class ReaderPage extends StatelessWidget {
       child: Obx(
         () => Offstage(
           offstage: !(_useOverlayBottomStatusBar() && controller.pageState.value == PageState.success),
-          child: Padding(
-            padding: EdgeInsets.fromLTRB(spacing, 0, spacing, MediaQuery.of(context).padding.bottom),
-            child: _buildStatusBarContent(context),
-          ),
+          child: Padding(padding: EdgeInsets.fromLTRB(spacing, 0, spacing, MediaQuery.of(context).padding.bottom), child: _buildStatusBarContent(context)),
         ),
       ),
     );
@@ -482,10 +491,7 @@ class ReaderPage extends StatelessWidget {
     return SizedBox(
       width: double.infinity,
       height: kStatusBarPadding.toDouble() + bottomInset,
-      child: Padding(
-        padding: EdgeInsets.fromLTRB(spacing, 0, spacing, bottomInset),
-        child: _buildStatusBarContent(context),
-      ),
+      child: Padding(padding: EdgeInsets.fromLTRB(spacing, 0, spacing, bottomInset), child: _buildStatusBarContent(context)),
     );
   }
 
@@ -496,14 +502,7 @@ class ReaderPage extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          StreamBuilder(
-            stream: controller.clockStream(),
-            builder: (_, snapshot) {
-              final now = snapshot.data ?? DateTime.now();
-              final timeString = DateFormat('HH:mm').format(now);
-              return Text(timeString, style: TextStyle(fontSize: 13, color: textColor));
-            },
-          ),
+          Text(DateFormat('HH:mm').format(controller.currentTime.value), style: TextStyle(fontSize: 13, color: textColor)),
           const SizedBox(width: 8),
           IconTheme(
             data: IconThemeData(color: textColor),
@@ -513,10 +512,7 @@ class ReaderPage extends StatelessWidget {
           const Spacer(),
           controller.readerSettingsState.value.direction == ReaderDirection.upToDown
               ? Text("${controller.verticalProgress.value} %", style: TextStyle(fontSize: 13, color: textColor))
-              : Text(
-                  "${controller.currentIndex.value + 1} / ${controller.maxPage.value}",
-                  style: TextStyle(fontSize: 13, color: textColor),
-                ),
+              : Text("${controller.currentIndex.value + 1} / ${controller.maxPage.value}", style: TextStyle(fontSize: 13, color: textColor)),
         ],
       );
     });
